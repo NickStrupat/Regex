@@ -19,8 +19,8 @@ public readonly ref struct Output
 
 	public ReadOnlySpan<Char> SubStr(ReadOnlySpan<Char> text) => text[Start..End];
 
-	public static implicit operator Output(Range range) => new(range.Start.Value, range.End.Value);
-	public static implicit operator Range(Output output) => output.Start..output.End;
+	public static implicit operator Output(System.Range range) => new(range.Start.Value, range.End.Value);
+	public static implicit operator System.Range(Output output) => output.Start..output.End;
 }
 
 static class RegexParserExtensions

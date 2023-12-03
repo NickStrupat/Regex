@@ -1,7 +1,37 @@
-﻿using Antlr4.Runtime;
+﻿using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
+using NoAlloq;
+using NoAlloq.Producers;
 using Regex;
+using static Regex.Parser;
+using static Regex.TryMatchChar;
 using static RegexParser;
+using Parser = Regex.Parser;
+using Range = Regex.Range;
+
+var what = Sequence(Digit(3), Literal('-'), Digit(3), Literal('-'), Digit(4));
+var isMatch2 = what.TryMatch("123-456-7890", out var l2);
+
+var phoneNumber = Digit(3).Then(Literal('-')).Then(Digit(3..4)).Then(Literal('-')).Then(Digit(4));
+var size = ManagedSize.Of(phoneNumber);
+var isMatch = phoneNumber.TryMatch("123-456-7890", out var l);
+return;
+
+var rule = new Range(new('a', 'c'));
+{
+	var a = rule.TryMatch(stackalloc Char[] {}, out var length);
+	Console.WriteLine(a);
+	Console.WriteLine(length);
+}
+foreach (var c in "abcd")
+{
+	var a = rule.TryMatch(stackalloc[] {c}, out var length);
+	Console.WriteLine(a);
+	Console.WriteLine(length);
+}
+return;
 
 var regex = "ac";
 var input = "ac";
@@ -215,3 +245,20 @@ public sealed class Listener : RegexBaseListener
 // 		_ => first
 // 	};
 // }
+
+public static class ManagedSize
+{
+	public static Int32 Of<T>() where T : unmanaged => Unsafe.SizeOf<T>();
+	public static Int32 Of<T>(in T instance) where T : unmanaged => Of<T>();
+}
+
+public static class UnmanagedSize
+{
+	public static Int32 Of<T>() where T : unmanaged => Cache<T>.Size;
+	public static Int32 Of<T>(in T instance) where T : unmanaged => Of<T>();
+
+	private static class Cache<T>
+	{
+		public static readonly Int32 Size = Marshal.SizeOf<T>();
+	}
+}
