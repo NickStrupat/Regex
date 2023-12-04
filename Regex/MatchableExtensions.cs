@@ -14,14 +14,6 @@ public static class MatchableExtensions
 	where T2 : struct, IMatchable =>
 		new(first, second);
 
-	// public static Then<T1, Literal> Then<T1>(this T1 first, Char literal)
-	// where T1 : struct, IMatchable =>
-	// 	new(first, new(literal));
-	//
-	// public static Then<T1, Literals> Then<T1>(this T1 first, ReadOnlyMemory<Char> literal)
-	// where T1 : struct, IMatchable =>
-	// 	new(first, new(literal));
-
 	public static Not<T> Not<T>(this T matchable)
 	where T : struct, IMatchable =>
 		new(matchable);
@@ -33,4 +25,49 @@ public static class MatchableExtensions
 	public static Quantity<T> Quantify<T>(this T matchable, UInt32 exactly)
 	where T : struct, IMatchable =>
 		new(matchable, Quantifier.Exactly(exactly));
+
+	public static Then<T1, Literal> Literal<T1>(this T1 first, Literal literal)
+	where T1 : struct, IMatchable =>
+		new(first, literal);
+
+	public static Then<T1, Literals> Literals<T1>(this T1 first, Literals literal)
+	where T1 : struct, IMatchable =>
+		new(first, literal);
+
+	public static Then<T1, Quantity<Digit>> Digit<T1>(this T1 first, Quantifier quantifier)
+	where T1 : struct, IMatchable =>
+		new(first, new(new(), quantifier));
+
+	public static Boolean TryMatch<T>(this T matchable, ReadOnlySpan<Char> input, out (Int32 start, Int32 end) matched, Boolean startAnchor = true, Boolean endAnchor = false)
+	where T : struct, IMatchable
+	{
+		var currentInput = input;
+		Boolean matchFound;
+		Int32 length = 0;
+		for (;;)
+		{
+			matchFound = matchable.TryMatch(currentInput, out var l);
+			length += l;
+			if (matchFound | startAnchor)
+				break;
+			if (currentInput.Length <= 1)
+			{
+				matched = (0, 0);
+				return false;
+			}
+			currentInput = currentInput[1..];
+		}
+		if (endAnchor)
+		{
+			if (currentInput.Length != length)
+			{
+				matched = (0, 0);
+				return false;
+			}
+			//matched = (input.Length - currentInput.Length, input.Length - currentInput.Length + length);
+			//return true;
+		}
+		matched = (input.Length - currentInput.Length, input.Length - currentInput.Length + length);
+		return matchFound;
+	}
 }

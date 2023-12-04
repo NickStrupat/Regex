@@ -10,34 +10,6 @@ using RosC = ReadOnlySpan<Char>;
 
 public static class Parser
 {
-	public static Sequence<T1, T2> Sequence<T1, T2>(T1 _1, T2 _2)
-	where T1 : IM where T2 : IM =>
-		new(_1, _2);
-
-	public static Sequence<T1, T2, T3> Sequence<T1, T2, T3>(T1 _1, T2 _2, T3 _3)
-	where T1 : IM where T2 : IM where T3 : IM =>
-		new(_1, _2, _3);
-
-	public static Sequence<T1, T2, T3, T4> Sequence<T1, T2, T3, T4>(T1 _1, T2 _2, T3 _3, T4 _4)
-	where T1 : IM where T2 : IM where T3 : IM where T4 : IM =>
-		new(_1, _2, _3, _4);
-
-	public static Sequence<T1, T2, T3, T4, T5> Sequence<T1, T2, T3, T4, T5>(T1 _1, T2 _2, T3 _3, T4 _4, T5 _5)
-	where T1 : IM where T2 : IM where T3 : IM where T4 : IM where T5 : IM =>
-		new(_1, _2, _3, _4, _5);
-
-	public static Sequence<T1, T2, T3, T4, T5, T6> Sequence<T1, T2, T3, T4, T5, T6>(T1 _1, T2 _2, T3 _3, T4 _4, T5 _5, T6 _6)
-	where T1 : IM where T2 : IM where T3 : IM where T4 : IM where T5 : IM where T6 : IM =>
-		new(_1, _2, _3, _4, _5, _6);
-
-	public static Sequence<T1, T2, T3, T4, T5, T6, T7> Sequence<T1, T2, T3, T4, T5, T6, T7>(T1 _1, T2 _2, T3 _3, T4 _4, T5 _5, T6 _6, T7 _7)
-	where T1 : IM where T2 : IM where T3 : IM where T4 : IM where T5 : IM where T6 : IM where T7 : IM =>
-		new(_1, _2, _3, _4, _5, _6, _7);
-
-	public static Sequence<T1, T2, T3, T4, T5, T6, T7, T8> Sequence<T1, T2, T3, T4, T5, T6, T7, T8>(T1 _1, T2 _2, T3 _3, T4 _4, T5 _5, T6 _6, T7 _7, T8 _8)
-	where T1 : IM where T2 : IM where T3 : IM where T4 : IM where T5 : IM where T6 : IM where T7 : IM where T8 : IM =>
-		new(_1, _2, _3, _4, _5, _6, _7, _8);
-
 	public static Digit Digit() => new();
 	public static AnyExceptNewline Any() => new();
 	public static Word Word() => new();
@@ -123,25 +95,6 @@ where T2 : IM
 	}
 }
 
-public readonly struct Then<T1, T2, T3>(T1 _1, T2 _2, T3 _3) : IM
-where T1 : IM
-where T2 : IM
-where T3 : IM
-{
-	public Boolean TryMatch(RosC input, out Int32 length)
-	{
-		length = 0;
-		if (!_1.TryMatch(input, out var l1))
-			return false;
-		if (!_2.TryMatch(input[l1..], out var l2))
-			return false;
-		if (!_3.TryMatch(input[(l1 + l2)..], out var l3))
-			return false;
-		length = l1 + l2 + l3;
-		return true;
-	}
-}
-
 public readonly struct AnyExceptNewline : IM
 {
 	public Boolean TryMatch(RosC input, out Int32 length) =>
@@ -209,3 +162,38 @@ public readonly struct Range(CharRange charRange) : IM
 	public Boolean TryMatch(RosC input, out Int32 length) =>
 		MatchOne(AtLeastOne(input) && charRange.Contains(input[0]), out length);
 }
+
+// public readonly struct StartsWith : IAnchor
+// {
+// 	public Boolean TryMatch(RosC input, out Int32 length)
+// 	{
+// 		if (matchable.TryMatch(input, out length) && length > 0)
+// 			return true;
+// 		length = 0;
+// 		return false;
+// 	}
+// }
+
+// public readonly struct Contains<T>(T matchable) : IM where T : IM
+// {
+// 	public Boolean TryMatch(RosC input, out Int32 length)
+// 	{
+// 		while (!input.IsEmpty)
+// 		{
+// 			if (matchable.TryMatch(input, out length) && length > 0)
+// 				return true;
+// 			input = input[1..];
+// 		}
+// 		length = 0;
+// 		return false;
+// 	}
+// }
+//
+// public readonly struct EndAnchor : IM
+// {
+// 	public Boolean TryMatch(RosC input, out Int32 length)
+// 	{
+// 		length = 0;
+// 		return input.IsEmpty;
+// 	}
+// }

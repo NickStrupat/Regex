@@ -11,12 +11,30 @@ using static RegexParser;
 using Parser = Regex.Parser;
 using Range = Regex.Range;
 
-var what = Sequence(Digit(3), Literal('-'), Digit(3), Literal('-'), Digit(4));
-var isMatch2 = what.TryMatch("123-456-7890", out var l2);
+{
+	var separator = Literal('-').Or(Literal(' ')).Quantify(0..1);
+	var cc = Digit(3).Then(separator).Digit(3).Then(separator).Digit(4);
 
-var phoneNumber = Digit(3).Then(Literal('-')).Then(Digit(3..4)).Then(Literal('-')).Then(Digit(4));
-var size = ManagedSize.Of(phoneNumber);
-var isMatch = phoneNumber.TryMatch("123-456-7890", out var l);
+	var isMatch = cc.TryMatch("as123-456-7890", out var m, startAnchor:false, endAnchor:true);
+	var isMatch2 = cc.TryMatch("d123 456 7890", out var m2, startAnchor:true, endAnchor:true);
+	var isMatch3 = cc.TryMatch("1234567890", out var l3, startAnchor:false, endAnchor:true);
+	var isMatch4 = cc.TryMatch("123-4567890", out var l4, startAnchor:false, endAnchor:true);
+	var isMatch5 = cc.TryMatch("123-456-789", out var l5, startAnchor:false, endAnchor:true);
+	var isMatch6 = cc.TryMatch("123-456-78901", out var l6, startAnchor:false, endAnchor:true);
+}
+// {
+// 	var or = new Alternation<Digit, Literal>(Digit(), Literal('-')); //Digit().Or(Literal('-'));
+// 	var asf = or.TryMatch("3", out var l3);
+// 	var asf3 = or.TryMatch("a", out var l5);
+// 	var asf4 = or.TryMatch("-", out var l6);
+//
+// 	var what = Sequence(Digit(3), Literal('-'), Digit(3), Literal('-'), Digit(4));
+// 	var isMatch2 = what.TryMatch("123-456-7890", out var l2);
+//
+// 	var phoneNumber = Digit(3).Then(Literal('-')).Then(Digit(3..4)).Then(Literal('-')).Then(Digit(4));
+// 	var size = ManagedSize.Of(phoneNumber);
+// 	var isMatch = phoneNumber.TryMatch("123-456-7890", out var l);
+// }
 return;
 
 var rule = new Range(new('a', 'c'));
