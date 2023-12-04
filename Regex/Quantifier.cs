@@ -20,8 +20,14 @@ public readonly struct Quantifier(UInt32 min, UInt32? max)
 
 	public static implicit operator Quantifier(UInt32 exactly) => new(exactly, exactly);
 	public static implicit operator Quantifier((UInt32 min, UInt32 max) range) => new(range.min, range.max);
-	public static implicit operator Quantifier(System.Range range) =>
-		range.Start.IsFromEnd | range.End.IsFromEnd
-			? throw new ArgumentOutOfRangeException(nameof(range), "range must be from start to end")
-			: new Quantifier((UInt32) range.Start.Value, (UInt32) range.End.Value);
+	public static implicit operator Quantifier(System.Range range)
+	{
+		if (range.Start.IsFromEnd)
+			throw new ArgumentOutOfRangeException(nameof(range), "Range start must not be from end");
+		if ((range.End.IsFromEnd & range.End.Value != 0))
+			throw new ArgumentOutOfRangeException(nameof(range), "Range end must not be from end unless it is 0 (indicating unlimited)");
+		var start = (UInt32) range.Start.Value;
+		var end = range.End.IsFromEnd & range.End.Value == 0 ? null : (UInt32?) range.End.Value;
+		return new Quantifier(start, end);
+	}
 }
