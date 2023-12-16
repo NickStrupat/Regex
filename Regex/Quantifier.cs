@@ -2,8 +2,12 @@ namespace Regex;
 
 public readonly struct Quantifier(UInt32 min, UInt32? max)
 {
-	public UInt32 Min { get; } = min;
-	public UInt32? Max { get; } = max is null || max >= min ? max : throw MaxEx();
+	private readonly Boolean isInitialized = true; // will be false if struct was default-initialized
+	private readonly UInt32? max = max is null || max >= min ? max : throw MaxEx();
+
+	// if struct was default-initialized, match exactly 1
+	public UInt32 Min => isInitialized ? min : 1;
+	public UInt32? Max => isInitialized ? max : 1;
 
 	private static ArgumentOutOfRangeException MaxEx() =>
 		new(nameof(max), $"{nameof(max)} must be greater than or equals to {nameof(min)}");
