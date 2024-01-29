@@ -11,11 +11,19 @@ using static RegexParser;
 using Parser = Regex.Parser;
 using Range = Regex.Range;
 
+var p = new Pair<Int32, Pair<Int32, String>>(42, new(43, "test"));
+var visitHandler = new VisitHandler();
+visitHandler.Visit(ref p);
+// //IVisitHandler.Visit(ref visitHandler, ref p);
+return;
+Console.WriteLine(UnmanagedSize.Of<Asdf>());
+Console.WriteLine(ManagedSize.Of<Asdf>());
 {
 	var separator = Literal('-').Or(Literal(' ')).Quantify(0..1);
 	var cc = Digit(3).Then(separator).Digit(3).Then(separator).Digit(4);
 
 	var isMatch = cc.TryMatch("as123-456-7890", out var m, startAnchor:false, endAnchor:true);
+	var isMatch1 = cc.TryMatch("as123-456-7890asdf", out var m1, startAnchor:false, endAnchor:false);
 	var isMatch2 = cc.TryMatch("d123 456 7890", out var m2, startAnchor:true, endAnchor:true);
 	var isMatch3 = cc.TryMatch("1234567890", out var l3, startAnchor:false, endAnchor:true);
 	var isMatch4 = cc.TryMatch("123-4567890", out var l4, startAnchor:false, endAnchor:true);
@@ -51,26 +59,26 @@ foreach (var c in "abcd")
 }
 return;
 
-var regex = "ac";
-var input = "ac";
-var stream = new CodePointCharStream(regex);
-var lexer = new RegexLexer(stream);
-var tokens = new CommonTokenStream(lexer);
-var parser = new RegexParser(tokens);
-parser.character().TryMatch(input, out var asdf);
-var pattern = parser.pattern();
-//var visitor = new Visitor(input.AsMemory());
-//var isMatch = visitor.Visit(pattern);
-
-
-if (pattern.TryMatch(input, out var matched))
-	Console.WriteLine("Match: " + input[matched.Start..matched.End]);
-else
-	Console.WriteLine("No match");
-
-var listener = new Listener("a");
-ParseTreeWalker.Default.Walk(listener, pattern);
-;
+// var regex = "ac";
+// var input = "ac";
+// var stream = new CodePointCharStream(regex);
+// var lexer = new RegexLexer(stream);
+// var tokens = new CommonTokenStream(lexer);
+// var parser = new RegexParser(tokens);
+// parser.character().TryMatch(input, out var asdf);
+// var pattern = parser.pattern();
+// //var visitor = new Visitor(input.AsMemory());
+// //var isMatch = visitor.Visit(pattern);
+//
+//
+// if (pattern.TryMatch(input, out var matched))
+// 	Console.WriteLine("Match: " + input[matched.Start..matched.End]);
+// else
+// 	Console.WriteLine("No match");
+//
+// var listener = new Listener("a");
+// ParseTreeWalker.Default.Walk(listener, pattern);
+// ;
 
 // static Boolean IsMatch(ExpressionContext expression, String input)
 // {
@@ -263,6 +271,14 @@ public sealed class Listener : RegexBaseListener
 // 		_ => first
 // 	};
 // }
+
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
+struct Asdf
+{
+	public byte A;
+	public int B;
+	public byte C;
+}
 
 public static class ManagedSize
 {

@@ -110,6 +110,9 @@ public static class TryMatchChar
 	internal static Boolean AtLeastOne(RosC i) => i.Length != 0;
 	internal static Boolean AtLeastOne(RosC i, out Char one) => Match(i.Length != 0, i.FirstOrDefault(), out one);
 
+	internal static Boolean AtLeast(Int32 count, RosC i) => i.Length >= count;
+	//internal static Boolean AtLeast(UInt32 count, RosC i, out RosC countSpan) => Match(i.Length != 0, i.FirstOrDefault(), out one);
+
 	// public static Boolean AnyCharacterExceptNewline(this Span<Char> i, out UInt32 length) => ((RosC)i).AnyCharacterExceptNewline(out length);
 	// public static Boolean Word(this Span<Char> i, out UInt32 length) => ((RosC)i).Word(out length);
 	// public static Boolean Digit(this Span<Char> i, out UInt32 length) => ((RosC)i).Digit(out length);
@@ -127,7 +130,7 @@ public static class TryMatchChar
 
 	internal static Boolean MatchOne(Boolean result, out Int32 length) => Match(result, 1, out length);
 
-	private static Boolean Match<T>(Boolean result, T ifMatched, out T matched)
+	internal static Boolean Match<T>(Boolean result, T ifMatched, out T matched)
 	{
 		if (result)
 		{

@@ -3,7 +3,7 @@ namespace Regex;
 public readonly struct Quantifier(UInt32 min, UInt32? max)
 {
 	private readonly Boolean isInitialized = true; // will be false if struct was default-initialized
-	private readonly UInt32? max = max is null || max >= min ? max : throw MaxEx();
+	private readonly UInt32? max = max is null | max >= min ? max : throw MaxEx();
 
 	// if struct was default-initialized, match exactly 1
 	public UInt32 Min => isInitialized ? min : 1;
@@ -17,7 +17,7 @@ public readonly struct Quantifier(UInt32 min, UInt32? max)
 	public static Quantifier ZeroOrOne { get; } = new(0, 1);
 	public static Quantifier ZeroOrMore { get; } = new(0, null);
 	public static Quantifier OneOrMore { get; } = new(1, null);
-	public static Quantifier Exactly(UInt32 count) => new(count, count);
+	public static Quantifier Exactly(UInt32 count) => count > 0 ? new(count, count) : throw new ArgumentOutOfRangeException(nameof(count), "count must be greater than 0");
 	public static Quantifier AtLeast(UInt32 min) => new(min, null);
 	public static Quantifier AtMost(UInt32 max) => new(0, max);
 	public static Quantifier Between(UInt32 min, UInt32 max) => new(min, max);

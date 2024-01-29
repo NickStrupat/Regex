@@ -17,6 +17,7 @@ public static class Parser
 	public static Not<T> Not<T>(T matchable) where T : IM => new(matchable);
 	public static Literal Literal(Char c) => new(c);
 	public static Literals Literals(ReadOnlyMemory<Char> s) => new(s);
+	public static Literals Literals(String s) => new(s);
 	public static Range Range(CharRange charRange) => new(charRange);
 
 	public static Quantity<Digit> Digit(Quantifier quantifier) => new(Digit(), quantifier);
@@ -154,7 +155,7 @@ public readonly struct Literals(ReadOnlyMemory<Char> text) : IM
 {
 	public Literals(String text) : this(text.AsMemory()) {}
 	public Boolean TryMatch(RosC input, out Int32 length) =>
-		MatchOne(input.SequenceEqual(text.Span), out length);
+		Match(AtLeast(text.Length, input) && input.SequenceEqual(text.Span), input.Length, out length);
 }
 
 public readonly struct Range(CharRange charRange) : IM
