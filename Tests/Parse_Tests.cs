@@ -1,25 +1,26 @@
 using Regex;
 using Xunit;
+using static Regex.Parser;
 
 namespace Tests;
 
 public class Parse_Tests
 {
     [Fact]
-    public void AnyExceptNewline()
+    public void AnyExceptNewline_Test()
     {
         for (var i = Char.MinValue; i != Char.MaxValue; i++)
         {
             if (Char.IsSurrogate(i))
                 continue;
             var isNewline = i == '\n';
-            Assert.Equal(!isNewline, Regex.Parser.Any().TryMatch([i], out var length));
+            Assert.Equal(!isNewline, Any().TryMatch([i], out var length));
             Assert.Equal(!isNewline ? 1 : 0, length);
         }
     }
     
     [Fact]
-    public void Literal()
+    public void Literal_Test()
     {
         for (var i = Char.MinValue; i != Char.MaxValue; i++)
         {
@@ -28,17 +29,16 @@ public class Parse_Tests
             var a = i == 'a';
             Assert.Equal(
                 a,
-                Regex.Parser.Literal('a').TryMatch([i], out var length)
+                Literal('a').TryMatch([i], out var length)
             );
             Assert.Equal(a ? 1 : 0, length);
         }
     }
     
     [Fact]
-    public void Literals()
+    public void Literals_Test()
     {
-        //var literals = Parser.Literal('a').Then(Parser.Literal('b'));
-        var literals = Parser.Literals("ab");
+        var literals = Literals("ab");
         for (var i = Char.MinValue; i != Char.MaxValue; i++)
         {
             if (Char.IsSurrogate(i))
@@ -51,11 +51,27 @@ public class Parse_Tests
             Assert.Equal(a ? 2 : 0, length);
         }
     }
+
+    [Theory]
+    [InlineData("a", "a", true)]
+    [InlineData("a", "b", false)]
+    [InlineData("a", "ab", true)]
+    [InlineData("a", "ba", false)]
+    [InlineData("a", "abc", true)]
+    [InlineData("a", "bac", false)]
+    public void Literals_MoreTests(String literal, String input, Boolean isMatchExpected)
+    {
+        var literals = Literals(literal);
+        Assert.Equal(
+            isMatchExpected,
+            literals.TryMatch(input, out var length)
+        );
+    }
     
     [Fact]
-    public void Range()
+    public void Range_Test()
     {
-        var range = Parser.Range(('a', 'z'));
+        var range = Range(('a', 'z'));
         for (var i = Char.MinValue; i != Char.MaxValue; i++)
         {
             if (Char.IsSurrogate(i))
@@ -70,9 +86,9 @@ public class Parse_Tests
     }
     
     [Fact]
-    public void Not()
+    public void Not_Test()
     {
-        var not = Parser.Not(Parser.Literal('a'));
+        var not = Not(Literal('a'));
         for (var i = Char.MinValue; i != Char.MaxValue; i++)
         {
             if (Char.IsSurrogate(i))
@@ -87,9 +103,9 @@ public class Parse_Tests
     }
     
     [Fact]
-    public void Digit()
+    public void Digit_Test()
     {
-        var digit = Parser.Digit();
+        var digit = Digit();
         for (var i = Char.MinValue; i != Char.MaxValue; i++)
         {
             if (Char.IsSurrogate(i))
@@ -104,9 +120,9 @@ public class Parse_Tests
     }
     
     [Fact]
-    public void Whitespace()
+    public void Whitespace_Test()
     {
-        var whitespace = Parser.Whitespace();
+        var whitespace = Whitespace();
         for (var i = Char.MinValue; i != Char.MaxValue; i++)
         {
             if (Char.IsSurrogate(i))
@@ -121,9 +137,9 @@ public class Parse_Tests
     }
     
     [Fact]
-    public void Word()
+    public void Word_Test()
     {
-        var word = Parser.Word();
+        var word = Word();
         for (var i = Char.MinValue; i != Char.MaxValue; i++)
         {
             if (Char.IsSurrogate(i))
@@ -138,9 +154,9 @@ public class Parse_Tests
     }
     
     [Fact]
-    public void AnyOneOf()
+    public void AnyOneOf_Test()
     {
-        var anyOneOf = Parser.Literal('a').Or(Parser.Literal('b')).Or(Parser.Literal('c'));
+        var anyOneOf = Literal('a').Or(Literal('b')).Or(Literal('c'));
         for (var i = Char.MinValue; i != Char.MaxValue; i++)
         {
             if (Char.IsSurrogate(i))
@@ -151,6 +167,23 @@ public class Parse_Tests
                 anyOneOf.TryMatch([i], out var length)
             );
             Assert.Equal(isAnyOneOf ? 1 : 0, length);
+        }
+    }
+    
+    [Fact]
+    public void NotAnyOneOf_Test()
+    {
+        var notAnyOneOf = Not(Literal('a').Or(Literal('b')).Or(Literal('c')));
+        for (var i = Char.MinValue; i != Char.MaxValue; i++)
+        {
+            if (Char.IsSurrogate(i))
+                continue;
+            var isNotAnyOneOf = i is not 'a' and not 'b' and not 'c';
+            Assert.Equal(
+                isNotAnyOneOf,
+                notAnyOneOf.TryMatch([i], out var length)
+            );
+            Assert.Equal(isNotAnyOneOf ? 1 : 0, length);
         }
     }
 }
