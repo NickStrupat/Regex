@@ -155,7 +155,7 @@ public readonly struct Literals(ReadOnlyMemory<Char> text) : IM
 {
 	public Literals(String text) : this(text.AsMemory()) {}
 	public Boolean TryMatch(RosC input, out Int32 length) =>
-		Match(AtLeast(text.Length, input) && input.SequenceEqual(text.Span), input.Length, out length);
+		Match(AtLeast(text.Length, input) && input[..text.Length].SequenceEqual(text.Span), text.Length, out length);
 }
 
 public readonly struct Range(CharRange charRange) : IM
