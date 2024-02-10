@@ -11,10 +11,17 @@ using static RegexParser;
 using Parser = Regex.Parser;
 using Range = Regex.Range;
 
-var p = new Pair<Int32, Pair<Int32, String>>(42, new(43, "test"));
-var visitHandler = new VisitHandler();
-visitHandler.Visit(ref p);
-// //IVisitHandler.Visit(ref visitHandler, ref p);
+var starter = Literal('_').Or(Word()).Or(Digit());
+var rest = Word().Or(Digit());
+var identifier = starter.Then(rest.Quantify(0..));
+var dsfgsdfg = Literals("local").Then(Whitespace()).Then(identifier).Then(Literal(';'));
+var handler = new ConsoleWriteVisitHandler();
+var fdsadsfa = dsfgsdfg.TryMatch("local	x;", handler, out var asdfasdfasdf);
+
+// var p = new Pair<Int32, Pair<Int32, String>>(42, new(43, "test"));
+// var visitHandler = new VisitHandler();
+// visitHandler.Visit(ref p);
+// // //IVisitHandler.Visit(ref visitHandler, ref p);
 return;
 Console.WriteLine(UnmanagedSize.Of<Asdf>());
 Console.WriteLine(ManagedSize.Of<Asdf>());

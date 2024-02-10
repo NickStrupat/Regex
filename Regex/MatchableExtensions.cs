@@ -2,6 +2,8 @@ using static Regex.TryMatchChar;
 
 namespace Regex;
 
+using RosC = ReadOnlySpan<Char>;
+
 public static class MatchableExtensions
 {
 	public static Or<T1, T2> Or<T1, T2>(this T1 first, T2 second)
@@ -38,15 +40,19 @@ public static class MatchableExtensions
 	where T1 : struct, IMatchable =>
 		new(first, new(new(), quantifier));
 
-	public static Boolean TryMatch<T>(this T matchable, ReadOnlySpan<Char> input, out (Int32 start, Int32 end) matched, Boolean startAnchor = true, Boolean endAnchor = false)
-	where T : struct, IMatchable
+	public static Boolean TryMatch<T>(this T matchable, RosC input, out (Int32 start, Int32 end) matched, Boolean startAnchor = true, Boolean endAnchor = false)
+	where T : struct, IMatchable =>
+		matchable.TryMatch(input, new DummyVisitHandler(), out matched, startAnchor, endAnchor);
+
+	public static Boolean TryMatch<T, TVh>(this T matchable, RosC input, TVh visitHandler, out (Int32 start, Int32 end) matched, Boolean startAnchor = true, Boolean endAnchor = false)
+	where T : struct, IMatchable where TVh : IVisitHandler
 	{
 		var currentInput = input;
 		Boolean matchFound;
 		Int32 length = 0;
 		for (;;)
 		{
-			matchFound = matchable.TryMatch(currentInput, out var l);
+			matchFound = matchable.TryMatch(currentInput, visitHandler, out var l);
 			length += l;
 			if (matchFound | startAnchor)
 				break;
@@ -69,5 +75,13 @@ public static class MatchableExtensions
 		}
 		matched = (input.Length - currentInput.Length, input.Length - currentInput.Length + length);
 		return matchFound;
+	}
+	
+	public static Boolean TryMatch<T>(this T matchable, RosC input, out Int32 length) where T : IMatchable =>
+		matchable.TryMatch(input, new DummyVisitHandler(), out length);
+	
+	private struct DummyVisitHandler : IVisitHandler
+	{
+		public void Handle<T>(in T value, RosC input) where T : IMatchable {}
 	}
 }
