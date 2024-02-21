@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics.Contracts;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using static Regex.TryMatchChar;
 
@@ -33,13 +34,31 @@ public static class Parser
 public interface IMatchable
 {
 	[Pure]
-	Boolean TryMatch<TVh>(RosC input, TVh visitHandler, out Int32 length) where TVh : IVisitHandler;
+	Boolean TryMatch<TVh>(RosC input, ref TVh visitHandler, out Int32 length) where TVh : IVisitHandler;
+	
+	//void HandleVisitFrom<TV>(ref TV visitor) where TV : IVisitor;// => visitor.Visit(this);
 }
+
+// public interface IVisitor
+// {
+// 	void Visit<T>(ref readonly T matchable);
+// }
+//
+// public interface IMutatingVisitor : IVisitor
+// {
+// 	void IVisitor.Visit<T>(ref readonly T matchable)
+// 	{
+// 		var copy = matchable;
+// 		Visit(ref Unsafe.AsRef(in copy));
+// 	}
+//
+// 	void Visit<T>(ref T matchable);
+// }
 
 public readonly struct Quantity<T>(T matchable, Quantifier quantifier) : IM
 where T : struct, IM
 {
-	public Boolean TryMatch<TVh>(RosC input, TVh visitHandler, out Int32 length) where TVh : IVisitHandler
+	public Boolean TryMatch<TVh>(RosC input, ref TVh visitHandler, out Int32 length) where TVh : IVisitHandler
 	{
 		var (min, max) = quantifier;
 		length = 0;
@@ -50,7 +69,9 @@ where T : struct, IM
 				break;
 			if (matchesFound >= max)
 				break;
-			visitHandler.Handle(matchable, input[..oneLength]);
+			if (!matchable.TryMatch(input, ref visitHandler, out _))
+				throw new ArgumentException("Input changed during matching", nameof(input));
+			//visitHandler.Handle(matchable, input[..oneLength]);
 			length += oneLength;
 			matchesFound++;
 			input = input[oneLength..];
@@ -63,14 +84,14 @@ public readonly struct Or<T1, T2>(T1 _1, T2 _2) : IM
 where T1 : IM
 where T2 : IM
 {
-	public Boolean TryMatch<TVh>(RosC input, TVh visitHandler, out Int32 length) where TVh : IVisitHandler
+	public Boolean TryMatch<TVh>(RosC input, ref TVh visitHandler, out Int32 length) where TVh : IVisitHandler
 	{
-		if (_1.TryMatch(input, visitHandler, out var l1))
+		if (_1.TryMatch(input, ref visitHandler, out var l1))
 		{
 			length = l1;
 			return true;
 		}
-		if (_2.TryMatch(input, visitHandler, out var l2))
+		if (_2.TryMatch(input, ref visitHandler, out var l2))
 		{
 			length = l2;
 			return true;
@@ -84,69 +105,69 @@ public readonly struct Then<T1, T2>(T1 _1, T2 _2) : IM
 where T1 : struct, IM
 where T2 : struct, IM
 {
-	public Boolean TryMatch<TVh>(RosC input, TVh visitHandler, out Int32 length) where TVh : IVisitHandler
+	public Boolean TryMatch<TVh>(RosC input, ref TVh visitHandler, out Int32 length) where TVh : IVisitHandler
 	{
 		length = 0;
-		if (!_1.TryMatch(input, visitHandler, out var l1))
+		if (!_1.TryMatch(input, ref visitHandler, out var l1))
 			return false;
-		if (!_2.TryMatch(input[l1..], visitHandler, out var l2))
+		if (!_2.TryMatch(input[l1..], ref visitHandler, out var l2))
 			return false;
 		length = l1 + l2;
 		return true;
 	}
 }
 
-public readonly struct AnyExceptNewline : IM
+public struct AnyExceptNewline : IM
 {
-	public Boolean TryMatch<TVh>(RosC input, TVh visitHandler, out Int32 length) where TVh : IVisitHandler
+	public Boolean TryMatch<TVh>(RosC input, ref TVh visitHandler, out Int32 length) where TVh : IVisitHandler
 	{
 		if (!MatchOne(AtLeastOne(input) && input[0] != '\n', out length))
 			return false;
-		visitHandler.Handle(this, input[..length]);
+		visitHandler.Handle(ref this, input[..length]);
 		return true;
 	}
 }
 
-public readonly struct Word : IM
+public struct Word : IM
 {
-	public Boolean TryMatch<TVh>(RosC input, TVh visitHandler, out Int32 length) where TVh : IVisitHandler
+	public Boolean TryMatch<TVh>(RosC input, ref TVh visitHandler, out Int32 length) where TVh : IVisitHandler
 	{
 		if (!MatchOne(AtLeastOne(input, out var x) && Char.IsLetterOrDigit(x) | x == '_', out length))
 			return false;
-		visitHandler.Handle(this, input[..length]);
+		visitHandler.Handle(ref this, input[..length]);
 		return true;
 	}
 }
 
-public readonly struct Digit : IM
+public struct Digit : IM
 {
-	public Boolean TryMatch<TVh>(RosC input, TVh visitHandler, out Int32 length) where TVh : IVisitHandler
+	public Boolean TryMatch<TVh>(RosC input, ref TVh visitHandler, out Int32 length) where TVh : IVisitHandler
 	{
 		if (!MatchOne(AtLeastOne(input, out var x) && Char.IsDigit(x), out length))
 			return false;
-		visitHandler.Handle(this, input[..length]);
+		visitHandler.Handle(ref this, input[..length]);
 		return true;
 	}
 }
 
-public readonly struct Whitespace : IM
+public struct Whitespace : IM
 {
-	public Boolean TryMatch<TVh>(RosC input, TVh visitHandler, out Int32 length) where TVh : IVisitHandler
+	public Boolean TryMatch<TVh>(RosC input, ref TVh visitHandler, out Int32 length) where TVh : IVisitHandler
 	{
 		if (!MatchOne(AtLeastOne(input, out var x) && Char.IsWhiteSpace(x), out length))
 			return false;
-		visitHandler.Handle(this, input[..length]);
+		visitHandler.Handle(ref this, input[..length]);
 		return true;
 	}
 }
 
-public readonly struct Not<T>(T matchable) : IM where T : IM
+public struct Not<T>(T matchable) : IM where T : IM
 {
-	public Boolean TryMatch<TVh>(RosC input, TVh visitHandler, out Int32 length) where TVh : IVisitHandler
+	public Boolean TryMatch<TVh>(RosC input, ref TVh visitHandler, out Int32 length) where TVh : IVisitHandler
 	{
 		if (!MatchOne(AtLeastOne(input) && !matchable.TryMatch(input, out length), out length))
 			return false;
-		visitHandler.Handle(this, input[..length]);
+		visitHandler.Handle(ref this, input[..length]);
 		return true;
 	}
 }
@@ -169,39 +190,39 @@ public readonly struct Not<T>(T matchable) : IM where T : IM
 // 		MatchOne(AtLeastOne(input, out var x) && !Char.IsWhiteSpace(x), out length);
 // }
 
-public readonly struct Literal(Char c) : IM
+public struct Literal(Char c) : IM
 {
-	public Boolean TryMatch<TVh>(RosC input, TVh visitHandler, out Int32 length) where TVh : IVisitHandler
+	public Boolean TryMatch<TVh>(RosC input, ref TVh visitHandler, out Int32 length) where TVh : IVisitHandler
 	{
 		if (!MatchOne(AtLeastOne(input) && input[0] == c, out length))
 			return false;
-		visitHandler.Handle(this, input[..length]);
+		visitHandler.Handle(ref this, input[..length]);
 		return true;
 	}
 	
 	public static implicit operator Literal(Char c) => new(c);
 }
 
-public readonly struct Literals(ReadOnlyMemory<Char> text) : IM
+public struct Literals(ReadOnlyMemory<Char> text) : IM
 {
 	public Literals(String text) : this(text.AsMemory()) {}
 
-	public Boolean TryMatch<TVh>(RosC input, TVh visitHandler, out Int32 length) where TVh : IVisitHandler
+	public Boolean TryMatch<TVh>(RosC input, ref TVh visitHandler, out Int32 length) where TVh : IVisitHandler
 	{
 		if (!Match(input.StartsWith(text.Span), text.Length, out length))
 			return false;
-		visitHandler.Handle(this, input[..length]);
+		visitHandler.Handle(ref this, input[..length]);
 		return true;
 	}
 }
 
-public readonly struct Range(CharRange charRange) : IM
+public struct Range(CharRange charRange) : IM
 {
-	public Boolean TryMatch<TVh>(RosC input, TVh visitHandler, out Int32 length) where TVh : IVisitHandler
+	public Boolean TryMatch<TVh>(RosC input, ref TVh visitHandler, out Int32 length) where TVh : IVisitHandler
 	{
 		if (!MatchOne(AtLeastOne(input) && charRange.Contains(input[0]), out length))
 			return false;
-		visitHandler.Handle(this, input[..length]);
+		visitHandler.Handle(ref this, input[..length]);
 		return true;
 	}
 }

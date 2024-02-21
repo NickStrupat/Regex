@@ -52,7 +52,7 @@ public static class MatchableExtensions
 		Int32 length = 0;
 		for (;;)
 		{
-			matchFound = matchable.TryMatch(currentInput, visitHandler, out var l);
+			matchFound = matchable.TryMatch(currentInput, ref visitHandler, out var l);
 			length += l;
 			if (matchFound | startAnchor)
 				break;
@@ -77,11 +77,14 @@ public static class MatchableExtensions
 		return matchFound;
 	}
 	
-	public static Boolean TryMatch<T>(this T matchable, RosC input, out Int32 length) where T : IMatchable =>
-		matchable.TryMatch(input, new DummyVisitHandler(), out length);
-	
+	public static Boolean TryMatch<T>(this T matchable, RosC input, out Int32 length) where T : IMatchable
+	{
+		var handler = new DummyVisitHandler();
+		return matchable.TryMatch(input, ref handler, out length);
+	}
+
 	private struct DummyVisitHandler : IVisitHandler
 	{
-		public void Handle<T>(in T value, RosC input) where T : IMatchable {}
+		public void Handle<T>(ref T value, RosC input) where T : IMatchable {}
 	}
 }

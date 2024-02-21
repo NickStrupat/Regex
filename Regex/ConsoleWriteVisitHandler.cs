@@ -2,7 +2,7 @@ namespace Regex;
 
 public struct ConsoleWriteVisitHandler : IVisitHandler
 {
-    public void Handle<T>(in T value, ReadOnlySpan<Char> input) where T : IMatchable
+    public void Handle<T>(ref T value, ReadOnlySpan<Char> input) where T : IMatchable
     {
         Console.Out.Write($"{typeof(T).Name}: ");
         foreach (var c in input)

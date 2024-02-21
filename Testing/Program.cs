@@ -6,17 +6,37 @@ using NoAlloq;
 using NoAlloq.Producers;
 using Regex;
 using static Regex.Parser;
+using static Regex.Quantifier;
 using static Regex.TryMatchChar;
 using static RegexParser;
+using Literal = Regex.Literal;
 using Parser = Regex.Parser;
 using Range = Regex.Range;
+using RosC = System.ReadOnlySpan<System.Char>;
+
+var namespaceVisitor = new NamespaceVisitor();
+var fdsjl = new NamespaceDefinition().TryMatch(
+	"""
+	namespace Foo {
+		namespace Bar {
+		}
+	}
+	""",
+	ref namespaceVisitor, out _);
+Console.WriteLine(fdsjl);
+return;
+
+LocalDefinition ld;
+var consoleWriteVisitHandler = new ConsoleWriteVisitHandler();
+ld.TryMatch("local x;", ref consoleWriteVisitHandler, out _);
+return;
 
 var starter = Literal('_').Or(Word()).Or(Digit());
 var rest = Word().Or(Digit());
 var identifier = starter.Then(rest.Quantify(0..));
 var dsfgsdfg = Literals("local").Then(Whitespace()).Then(identifier).Then(Literal(';'));
 var handler = new ConsoleWriteVisitHandler();
-var fdsadsfa = dsfgsdfg.TryMatch("local	x;", handler, out var asdfasdfasdf);
+var fdsadsfa = dsfgsdfg.TryMatch("local x;", ref handler, out var asdfasdfasdf);
 
 // var p = new Pair<Int32, Pair<Int32, String>>(42, new(43, "test"));
 // var visitHandler = new VisitHandler();
@@ -301,5 +321,118 @@ public static class UnmanagedSize
 	private static class Cache<T>
 	{
 		public static readonly Int32 Size = Marshal.SizeOf<T>();
+	}
+}
+
+public struct Identifier : IMatchable
+{
+	public Boolean TryMatch<TVh>(RosC input, ref TVh visitHandler, out Int32 length) where TVh : IVisitHandler
+	{
+		var starter = Literal('_').Or(Word()).Or(Digit());
+		var rest = Word().Or(Digit());
+		var identifier = starter.Then(rest.Quantify(0..));
+		if (!identifier.TryMatch(input, out length))
+			return false;
+		visitHandler.Handle(ref this, input[..length]);
+		return true;
+	}
+}
+
+public readonly struct LocalDefinition() : IMatchable
+{
+	public Boolean TryMatch<TVh>(RosC input, ref TVh visitHandler, out Int32 length) where TVh : IVisitHandler
+	{
+		return Literals("local").Then(Whitespace()).Then(new Identifier()).Then(Literal(';')).TryMatch(input, ref visitHandler, out length);
+	}
+}
+
+public struct NamespaceDefinition : IMatchable
+{
+	public ReadOnlyMemory<Char> Identifier;
+	public Boolean TryMatch<TVh>(RosC input, ref TVh visitHandler, out Int32 length) where TVh : IVisitHandler
+	{
+		var parser =
+			Literals("namespace").Then(Whitespace()).Then(new Identifier())
+			.Then(Whitespace(..)).Then(Literal('{')).Then(Whitespace(..))
+			.Then(this.Quantify(..))
+			.Then(Whitespace(..)).Then(Literal('}'));
+		IdentifierVisitor iv = new();
+		if (!parser.TryMatch(input, ref iv, out length))
+			return false;
+		Identifier = iv.Identifier;
+		visitHandler.Handle(ref this, input[..length]);
+		if (!parser.TryMatch(input, ref visitHandler, out length))
+			throw new ArgumentException("Input changed during matching", nameof(input));
+		return true;
+	}
+	
+	private struct IdentifierVisitor : IVisitHandler
+	{
+		public ReadOnlyMemory<Char> Identifier { get; private set; }
+		public void Handle<T>(ref T value, RosC input) where T : IMatchable
+		{
+			if (typeof(T) != typeof(Identifier))
+				return;
+			if (Identifier.IsEmpty)
+				Identifier = input.ToArray();
+		}
+	}
+	
+	// private struct IdentifierVisitor : IVisitHandler<Identifier>
+	// {
+	// 	public ReadOnlyMemory<Char> Identifier;
+	// 	void IVisitHandler<Identifier>.Handle(in Identifier value, RosC input)
+	// 	{
+	// 		if (Identifier.IsEmpty)
+	// 			Identifier = input.ToArray();
+	// 	}
+	// }
+}
+
+public readonly struct NamespaceVisitor : IVisitHandler
+{
+	public void Handle<T>(ref T value, RosC input) where T : IMatchable
+	{
+		if (!Are.SameType(in value, out InRef<NamespaceDefinition> nv))
+			return;
+		Console.Write("Namespace: ");
+		Console.Out.WriteLine(nv.Value.Identifier);
+	}
+}
+
+public readonly ref struct Ref<T>
+{
+	public readonly ref T Value;
+	public Ref(ref T @ref) => Value = ref @ref;
+}
+
+public readonly ref struct InRef<T>()
+{
+	public readonly ref readonly T Value = ref Unsafe.NullRef<T>();
+	public InRef(ref readonly T @ref) : this() => Value = ref @ref;
+}
+
+public static class Are
+{
+	public static Boolean SameType<T1, T2>(ref T1 value, out Ref<T2> x)
+	{
+		if (typeof(T1) == typeof(T2))
+		{
+			x = new Ref<T2>(ref Unsafe.As<T1, T2>(ref value));
+			return true;
+		}
+		x = default;
+		return false;
+	}
+    
+	public static Boolean SameType<T1, T2>(ref readonly T1 value, out InRef<T2> x)
+	{
+		if (typeof(T1) == typeof(T2))
+		{
+			x = new InRef<T2>(ref Unsafe.As<T1, T2>(ref Unsafe.AsRef(in value)));
+			return true;
+		}
+		x = default;
+		return false;
 	}
 }
